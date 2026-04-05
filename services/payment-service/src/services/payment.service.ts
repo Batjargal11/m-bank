@@ -149,41 +149,9 @@ export async function initiatePayment(
     idempotency_key: idempotencyKey,
   });
 
-  // Publish payment initiated event
-  const event: PaymentInitiatedEvent = {
-    eventId: uuidv4(),
-    eventType: EventType.PAYMENT_INITIATED,
-    correlationId: uuidv4(),
-    timestamp: new Date().toISOString(),
-    source: 'payment-service',
-    payload: {
-      paymentId: payment.payment_id,
-      invoiceId: payment.invoice_id,
-      invoiceNo: payment.invoice_no,
-      payerAccount: payment.payer_account,
-      beneficiaryAccount: payment.beneficiary_account,
-      amount: Number(payment.amount),
-      currency: payment.currency,
-    },
-  };
-
-  await publishPaymentInitiated(event);
-
-  // Publish audit log
-  await publishAuditLog({
-    eventId: uuidv4(),
-    correlationId: event.correlationId,
-    action: 'PAYMENT_INITIATED',
-    entityType: 'payment',
-    entityId: payment.payment_id,
-    userId,
-    orgId,
-    details: {
-      invoiceId: dto.invoice_id,
-      amount: dto.amount,
-      currency: dto.currency,
-    },
-    timestamp: new Date().toISOString(),
+  // Process payment synchronously via Integration Service → Finacle
+  processPaymentAsync(payment.payment_id, payment.invoice_id, dto.payer_account, payment.beneficiary_account, dto.amount, dto.currency).catch((err) => {
+    logger.error({ err, paymentId: payment.payment_id }, 'Async payment processing failed');
   });
 
   // Store idempotency key
@@ -197,12 +165,107 @@ export async function initiatePayment(
     );
   }
 
-  logger.info(
-    { paymentId: payment.payment_id, invoiceId: dto.invoice_id },
-    'Payment initiated',
-  );
-
+  logger.info({ paymentId: payment.payment_id, invoiceId: dto.invoice_id }, 'Payment initiated');
   return { payment, cached: false };
+}
+
+async function processPaymentAsync(
+  paymentId: string,
+  invoiceId: string,
+  payerAccount: string,
+  beneficiaryAccount: string,
+  amount: number,
+  currency: string,
+): Promise<void> {
+  try {
+    // 1. Call Integration Service → Finacle transfer
+    const transferUrl = `${config.integrationServiceUrl}/internal/finacle/validate-account`;
+    const validateResp = await fetch(transferUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_no: payerAccount }),
+    });
+
+    if (!validateResp.ok) {
+      await paymentRepo.updateStatus(paymentId, PaymentStatus.PAYMENT_FAILED);
+      logger.error({ paymentId }, 'Account validation failed');
+      return;
+    }
+
+    // 2. Execute Finacle transfer via mock
+    const transferResp = await fetch(`${config.finacleUrl}/finacle/transfer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        debit_account: payerAccount,
+        credit_account: beneficiaryAccount,
+        amount,
+        currency,
+        reference: `PAY-${paymentId.slice(0, 8)}`,
+      }),
+    });
+
+    const transferResult = await transferResp.json() as any;
+
+    if (!transferResp.ok || !transferResult.success) {
+      await paymentRepo.updateStatus(paymentId, PaymentStatus.PAYMENT_FAILED);
+      logger.error({ paymentId, error: transferResult.error }, 'Finacle transfer failed');
+      return;
+    }
+
+    const txnRef = transferResult.data?.txn_ref || `FIN-${Date.now()}`;
+
+    // 3. Update payment → PAID
+    await paymentRepo.updateStatus(paymentId, PaymentStatus.PAID, txnRef);
+    logger.info({ paymentId, txnRef }, 'Payment PAID');
+
+    // 4. Update invoice paid_amount + status directly via invoice DB
+    const { Pool } = await import('pg');
+    const invoiceDbUrl = config.invoiceDatabaseUrl || config.databaseUrl.replace('payment_db', 'invoice_db');
+    const invoicePool = new Pool({ connectionString: invoiceDbUrl, max: 2 });
+
+    try {
+      const client = await invoicePool.connect();
+      try {
+        await client.query('BEGIN');
+
+        const invResult = await client.query('SELECT * FROM invoices WHERE invoice_id = $1 FOR UPDATE', [invoiceId]);
+        if (invResult.rows.length > 0) {
+          const inv = invResult.rows[0];
+          const newPaid = Number(inv.paid_amount) + amount;
+          const total = Number(inv.total_amount);
+          const newOutstanding = Math.max(0, total - newPaid);
+          const newStatus = newPaid >= total ? 'PAID' : newPaid > 0 ? 'PARTIALLY_PAID' : inv.status;
+
+          await client.query(
+            'UPDATE invoices SET paid_amount = $1, outstanding_amount = $2, status = $3, updated_at = NOW() WHERE invoice_id = $4',
+            [newPaid, newOutstanding, newStatus, invoiceId],
+          );
+
+          if (newStatus !== inv.status) {
+            await client.query(
+              "INSERT INTO invoice_status_history (invoice_id, from_status, to_status, changed_by, reason) VALUES ($1, $2, $3, '00000000-0000-0000-0000-000000000000', 'Payment received')",
+              [invoiceId, inv.status, newStatus],
+            );
+          }
+
+          logger.info({ invoiceId, newPaid, newStatus, txnRef }, 'Invoice updated after payment');
+        }
+
+        await client.query('COMMIT');
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    } finally {
+      await invoicePool.end();
+    }
+  } catch (err) {
+    logger.error({ err, paymentId }, 'Payment processing error');
+    await paymentRepo.updateStatus(paymentId, PaymentStatus.PAYMENT_FAILED).catch(() => {});
+  }
 }
 
 export async function approvePayment(
