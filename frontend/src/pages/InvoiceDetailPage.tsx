@@ -83,7 +83,6 @@ export default function InvoiceDetailPage() {
             <InfoRow label="Огноо" value={formatDate(invoice.issue_date)} />
             <InfoRow label="Дуусах огноо" value={formatDate(invoice.due_date)} />
             <InfoRow label="Валют" value={invoice.currency} />
-            <InfoRow label="НӨАТ" value={formatCurrency(Number(invoice.vat_amount), invoice.currency)} />
             <InfoRow label="Нийт дүн" value={formatCurrency(Number(invoice.total_amount), invoice.currency)} highlight />
             <InfoRow label="Төлөгдсөн" value={formatCurrency(Number(invoice.paid_amount), invoice.currency)} />
             <InfoRow label="Үлдэгдэл" value={formatCurrency(Number(invoice.outstanding_amount), invoice.currency)} highlight />
@@ -131,7 +130,6 @@ export default function InvoiceDetailPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-500">Тайлбар</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-500">Тоо</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-500">Нэгж үнэ</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-500">Татвар</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-500">Нийт</th>
               </tr>
             </thead>
@@ -142,7 +140,6 @@ export default function InvoiceDetailPage() {
                   <td className="px-4 py-3 text-sm text-gray-900">{item.description}</td>
                   <td className="px-4 py-3 text-right text-sm">{item.quantity}</td>
                   <td className="px-4 py-3 text-right text-sm">{formatCurrency(Number(item.unit_price), invoice.currency)}</td>
-                  <td className="px-4 py-3 text-right text-sm">{formatCurrency(Number(item.tax_amount), invoice.currency)}</td>
                   <td className="px-4 py-3 text-right text-sm font-medium">{formatCurrency(Number(item.total_price), invoice.currency)}</td>
                 </tr>
               ))}

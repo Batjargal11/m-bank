@@ -26,7 +26,7 @@ export default function LoginPage() {
             <Building2 className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">M-Bank</h1>
-          <p className="mt-1 text-sm text-gray-500">Банк хоорондын нэхэмжлэх систем</p>
+          <p className="mt-1 text-sm text-gray-500">Нэхэмжлэх удирдлагын систем</p>
         </div>
 
         <div className="card">
@@ -89,9 +89,6 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-gray-400">
-          &copy; 2024 M-Bank. Бүх эрх хуулиар хамгаалагдсан.
-        </p>
       </div>
     </div>
   );

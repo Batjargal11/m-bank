@@ -37,7 +37,6 @@ export default function Sidebar() {
         </div>
         <div>
           <h1 className="text-lg font-bold text-gray-900">M-Bank</h1>
-          <p className="text-xs text-gray-500">Нэхэмжлэх систем</p>
         </div>
       </div>
 
@@ -69,7 +68,6 @@ export default function Sidebar() {
           <BookOpen className="h-5 w-5" />
           Documentation
         </NavLink>
-        <p className="text-xs text-gray-400 text-center pt-2">v1.0.0</p>
       </div>
     </aside>
   );
