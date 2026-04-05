@@ -1,83 +1,83 @@
-# M-Bank: Интернэт банк хоорондын нэхэмжлэх солилцох систем
+# M-Bank: Inter-Bank Invoice Exchange System
 
-## Системийн тойм
+## Overview
 
-Интернэт банк ашиглаж буй байгууллагууд хоорондоо нэхэмжлэх үүсгэх, илгээх, хүлээн авах, төлөх, цуцлах үйлдлүүдийг аюулгүй, найдвартай хэрэгжүүлэх demo систем.
+A secure and reliable demo system for organizations to create, send, receive, pay, and cancel invoices between each other through internet banking.
 
-### Технологийн стек
+### Tech Stack
 
-| Бүрэлдэхүүн | Технологи |
-|-------------|-----------|
-| Backend | Express + TypeScript (microservice бүрт) |
+| Component | Technology |
+|-----------|-----------|
+| Backend | Express + TypeScript (per microservice) |
 | Frontend | React + TypeScript + Vite + Tailwind CSS |
-| Database | PostgreSQL 16 (service бүрт тусдаа DB) |
+| Database | PostgreSQL 16 (database-per-service) |
 | Message Queue | Redis 7 + BullMQ (async messaging) |
 | Infra | Docker Compose / Local dev |
 
 ---
 
-## Хурдан эхлүүлэх
+## Quick Start
 
-### Шаардлага
+### Prerequisites
 
 - Node.js 20+
 - PostgreSQL 16+
 - Redis 7+
 
-### Суулгах
+### Installation
 
 ```bash
 # 1. Clone + Install
 cd m-bank
 npm install
 
-# 2. Database үүсгэх
+# 2. Create databases
 for db in auth_db invoice_db payment_db notification_db audit_db integration_db; do
   createdb $db
 done
 
-# 3. Shared packages build
+# 3. Build shared packages
 npx tsc --project packages/shared-types/tsconfig.json
 npx tsc --project packages/shared-utils/tsconfig.json
 npx tsc --project packages/shared-middleware/tsconfig.json
 
-# 4. Seed data оруулах
+# 4. Seed test data
 AUTH_DATABASE_URL="postgresql://$(whoami)@localhost:5432/auth_db" npx ts-node scripts/seed-db.ts
 
-# 5. Бүх service эхлүүлэх
+# 5. Start all services
 bash scripts/run-all.sh
 
-# 6. Frontend эхлүүлэх (шинэ terminal)
+# 6. Start frontend (new terminal)
 cd frontend && npx vite --port 5173
 ```
 
-### Нэвтрэх
+### Login
 
-Browser-аар `http://localhost:5173` нээнэ.
+Open `http://localhost:5173` in browser.
 
-| Username | Password | Role | Чадах зүйл |
+| Username | Password | Role | Permissions |
 |----------|----------|------|------------|
-| `maker_a` | password123 | CORPORATE_MAKER | Нэхэмжлэх үүсгэх, илгээх |
-| `maker_b` | password123 | CORPORATE_MAKER | Нэхэмжлэх үүсгэх, илгээх |
-| `user_a` | password123 | CORPORATE_USER | Нэхэмжлэх харах, төлөх |
-| `user_b` | password123 | CORPORATE_USER | Нэхэмжлэх харах, төлөх |
-| `approver_a` | password123 | CORPORATE_APPROVER | Төлбөр батлах, цуцлах |
-| `approver_b` | password123 | CORPORATE_APPROVER | Төлбөр батлах, цуцлах |
-| `admin` | password123 | SYSTEM_ADMIN | Бүх эрх + Админ хуудас |
-| `operator` | password123 | BANK_OPERATOR | Аудит лог, тайлан |
+| `maker_a` | password123 | CORPORATE_MAKER | Create, send invoices |
+| `maker_b` | password123 | CORPORATE_MAKER | Create, send invoices |
+| `user_a` | password123 | CORPORATE_USER | View invoices, make payments |
+| `user_b` | password123 | CORPORATE_USER | View invoices, make payments |
+| `approver_a` | password123 | CORPORATE_APPROVER | Approve payments, cancel invoices |
+| `approver_b` | password123 | CORPORATE_APPROVER | Approve payments, cancel invoices |
+| `admin` | password123 | SYSTEM_ADMIN | Full access + Admin panel |
+| `operator` | password123 | BANK_OPERATOR | Audit logs, reports |
 
-### Тест байгууллагууд
+### Test Organizations
 
-| Байгууллага | Регистрийн дугаар | MNT данс | USD данс |
-|------------|-------------------|----------|----------|
-| Монгол Технологи ХХК | REG-001 | 1001000001 (50M) | 1001000002 (100K) |
-| Улаанбаатар Худалдаа ХХК | REG-002 | 2001000001 (30M) | 2001000002 (50K) |
+| Organization | Reg. No | MNT Account | USD Account |
+|-------------|---------|-------------|-------------|
+| Mongol Technology LLC | REG-001 | 1001000001 (50M) | 1001000002 (100K) |
+| Ulaanbaatar Trade LLC | REG-002 | 2001000001 (30M) | 2001000002 (50K) |
 
 ---
 
-## Архитектур
+## Architecture
 
-### Service-үүд
+### Services
 
 ```
 ┌──────────┐     ┌─────────────┐     ┌──────────────────────────────────┐
@@ -97,26 +97,26 @@ Browser-аар `http://localhost:5173` нээнэ.
                                      └──────────────────────────────────┘
 ```
 
-| Service | Port | Зорилго | Database |
+| Service | Port | Purpose | Database |
 |---------|------|---------|----------|
 | API Gateway | 4000 | JWT verify, rate limit, proxy routing | — |
 | Auth Service | 4001 | Login, RBAC, users, organizations, accounts | auth_db |
-| Invoice Service | 4002 | Нэхэмжлэх CRUD, статус удирдлага | invoice_db |
-| Payment Service | 4003 | Төлбөр, idempotency, Finacle интеграц | payment_db |
-| Notification Service | 4004 | In-app мэдэгдэл, email | notification_db |
-| Audit Service | 4005 | Аудит лог, интеграцийн лог | audit_db |
+| Invoice Service | 4002 | Invoice CRUD, status management | invoice_db |
+| Payment Service | 4003 | Payment processing, idempotency, Finacle integration | payment_db |
+| Notification Service | 4004 | In-app notifications, email | notification_db |
+| Audit Service | 4005 | Audit logs, integration logs | audit_db |
 | Integration Service | 4006 | Finacle/e-Invoice adapter, retry queue | integration_db |
-| Mock Finacle | 4010 | Core Banking симулятор | in-memory |
-| Mock e-Invoice | 4011 | Татварын систем симулятор | in-memory |
+| Mock Finacle | 4010 | Core Banking simulator | in-memory |
+| Mock e-Invoice | 4011 | Tax system simulator | in-memory |
 | Frontend | 5173 | React SPA | — |
 
-### Харилцааны загвар
+### Communication Patterns
 
 **Synchronous (HTTP REST):**
-- API Gateway → Auth Service (JWT verify)
-- Invoice Service → Auth Service (org нэр авах)
-- Payment Service → Integration Service (данс validate)
-- Integration Service → Mock Finacle/e-Invoice (гүйлгээ хийх)
+- API Gateway → Auth Service (JWT verification)
+- Invoice Service → Auth Service (resolve org name)
+- Payment Service → Integration Service (account validation)
+- Integration Service → Mock Finacle/e-Invoice (execute transfer)
 
 **Asynchronous (BullMQ Queue):**
 - `invoice.status-changed` → Notification, Audit, Integration
@@ -127,36 +127,36 @@ Browser-аар `http://localhost:5173` нээнэ.
 
 ---
 
-## Бизнес процесс
+## Business Process
 
-### 1. Нэхэмжлэх илгээх урсгал
+### 1. Invoice Send Flow
 
 ```
 Maker (Org A)                       System                        User (Org B)
      │                                │                                │
-     │ 1. Нэхэмжлэх үүсгэх (DRAFT)   │                                │
+     │ 1. Create invoice (DRAFT)      │                                │
      ├───────────────────────────────►│                                │
      │                                │                                │
-     │ 2. Илгээх                      │                                │
+     │ 2. Send invoice                │                                │
      ├───────────────────────────────►│                                │
      │                                │ DRAFT→VERIFIED→SENT→RECEIVED   │
      │                                │                                │
-     │                                │ 3. Ирсэн нэхэмжлэх харагдана  │
+     │                                │ 3. Invoice appears in received │
      │                                │───────────────────────────────►│
      │                                │                                │
-     │                                │ 4. Дэлгэрэнгүй харах (VIEWED) │
+     │                                │ 4. View detail (VIEWED)        │
      │                                │◄───────────────────────────────┤
      │                                │                                │
 ```
 
-### 2. Төлбөр хийх урсгал
+### 2. Payment Flow
 
 ```
 User (Org B)          Payment Service     Integration       Mock Finacle
      │                      │                  │                  │
-     │ 1. Төлбөр хийх       │                  │                  │
+     │ 1. Initiate payment  │                  │                  │
      ├─────────────────────►│                  │                  │
-     │                      │ 2. Данс validate │                  │
+     │                      │ 2. Validate acc  │                  │
      │                      ├─────────────────►│                  │
      │                      │                  │ 3. Finacle call  │
      │                      │                  ├─────────────────►│
@@ -185,7 +185,7 @@ User (Org B)          Payment Service     Integration       Mock Finacle
      │◄─ PAID + txn_ref ────┤                  │                  │
 ```
 
-### 3. Нэхэмжлэхийн статус шилжилт
+### 3. Invoice Status Lifecycle
 
 ```
 DRAFT → VERIFIED → SENT → RECEIVED → VIEWED → PAYMENT_PENDING → PAYMENT_PROCESSING
@@ -198,21 +198,21 @@ SENT/RECEIVED/VIEWED → CANCEL_REQUESTED → CANCELLED
                                                      EXPIRED (cron job)
 ```
 
-| Статус | Тайлбар |
-|--------|---------|
-| DRAFT | Ноорог, засах/устгах боломжтой |
-| VERIFIED | Баталгаажсан (автомат) |
-| SENT | Илгээгдсэн |
-| RECEIVED | Хүлээн авагчид хүрсэн (автомат) |
-| VIEWED | Хүлээн авагч үзсэн |
-| PAYMENT_PENDING | Төлбөр хүлээгдэж буй |
-| PAYMENT_PROCESSING | Finacle-д боловсруулагдаж буй |
-| PARTIALLY_PAID | Хэсэгчлэн төлөгдсөн |
-| PAID | Бүрэн төлөгдсөн |
-| CANCEL_REQUESTED | Цуцлалт хүсэлт |
-| CANCELLED | Цуцлагдсан |
-| FAILED | Төлбөр амжилтгүй |
-| EXPIRED | Хугацаа дууссан |
+| Status | Description |
+|--------|-------------|
+| DRAFT | Draft — can be edited or deleted |
+| VERIFIED | Verified automatically before sending |
+| SENT | Sent to receiver organization |
+| RECEIVED | Delivered to receiver (auto-transition) |
+| VIEWED | Viewed by receiver |
+| PAYMENT_PENDING | Payment initiated, awaiting processing |
+| PAYMENT_PROCESSING | Being processed via Finacle |
+| PARTIALLY_PAID | Partially paid |
+| PAID | Fully paid |
+| CANCEL_REQUESTED | Cancellation requested |
+| CANCELLED | Cancelled |
+| FAILED | Payment failed |
+| EXPIRED | Expired (past due date) |
 
 ---
 
@@ -220,42 +220,42 @@ SENT/RECEIVED/VIEWED → CANCEL_REQUESTED → CANCELLED
 
 ### Auth Service (`/api/auth/*`)
 
-| Method | Endpoint | Auth | Тайлбар |
-|--------|----------|------|---------|
-| POST | `/api/auth/login` | No | Нэвтрэх `{username, password}` → `{tokens, user}` |
-| POST | `/api/auth/refresh` | No | Token шинэчлэх `{refreshToken}` |
-| POST | `/api/auth/logout` | Yes | Гарах |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/login` | No | Login `{username, password}` → `{tokens, user}` |
+| POST | `/api/auth/refresh` | No | Refresh token `{refreshToken}` |
+| POST | `/api/auth/logout` | Yes | Logout |
 
 ### Organizations (`/api/organizations/*`)
 
-| Method | Endpoint | Auth | Тайлбар |
-|--------|----------|------|---------|
-| GET | `/api/organizations` | Yes | Байгууллагын жагсаалт |
-| GET | `/api/organizations/:id` | Yes | Байгууллагын дэлгэрэнгүй |
-| GET | `/api/organizations/:id/accounts` | Yes | Дансны жагсаалт |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/organizations` | Yes | List organizations |
+| GET | `/api/organizations/:id` | Yes | Get organization detail |
+| GET | `/api/organizations/:id/accounts` | Yes | List accounts |
 
 ### Users (`/api/users/*`)
 
-| Method | Endpoint | Auth | Тайлбар |
-|--------|----------|------|---------|
-| GET | `/api/users` | Yes | Хэрэглэгчийн жагсаалт (admin бол бүгд) |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/users` | Yes | List users (admin sees all) |
 
 ### Invoice Service (`/api/invoices/*`)
 
-| Method | Endpoint | Auth | Permission | Тайлбар |
-|--------|----------|------|------------|---------|
-| GET | `/api/invoices?direction=sent\|received` | Yes | — | Нэхэмжлэхийн жагсаалт |
-| GET | `/api/invoices/stats` | Yes | — | Dashboard статистик |
-| POST | `/api/invoices` | Yes | invoice:create | Нэхэмжлэх үүсгэх |
-| GET | `/api/invoices/:id` | Yes | invoice:view | Дэлгэрэнгүй |
-| PUT | `/api/invoices/:id` | Yes | invoice:create | DRAFT засах |
-| DELETE | `/api/invoices/:id` | Yes | invoice:create | DRAFT устгах |
-| POST | `/api/invoices/:id/send` | Yes | invoice:send | Илгээх |
-| POST | `/api/invoices/:id/view` | Yes | invoice:view | Үзсэн тэмдэглэх |
-| POST | `/api/invoices/:id/cancel` | Yes | — | Цуцлах хүсэлт |
-| GET | `/api/invoices/:id/history` | Yes | invoice:view | Статусын түүх |
+| Method | Endpoint | Auth | Permission | Description |
+|--------|----------|------|------------|-------------|
+| GET | `/api/invoices?direction=sent\|received` | Yes | — | List invoices |
+| GET | `/api/invoices/stats` | Yes | — | Dashboard statistics |
+| POST | `/api/invoices` | Yes | invoice:create | Create invoice |
+| GET | `/api/invoices/:id` | Yes | invoice:view | Get detail with items |
+| PUT | `/api/invoices/:id` | Yes | invoice:create | Update DRAFT |
+| DELETE | `/api/invoices/:id` | Yes | invoice:create | Delete DRAFT |
+| POST | `/api/invoices/:id/send` | Yes | invoice:send | Send to receiver |
+| POST | `/api/invoices/:id/view` | Yes | invoice:view | Mark as viewed |
+| POST | `/api/invoices/:id/cancel` | Yes | — | Request cancellation |
+| GET | `/api/invoices/:id/history` | Yes | invoice:view | Status change history |
 
-**Нэхэмжлэх үүсгэх жишээ:**
+**Create Invoice Example:**
 ```json
 POST /api/invoices
 {
@@ -264,27 +264,26 @@ POST /api/invoices
   "issue_date": "2026-03-31",
   "due_date": "2026-04-30",
   "currency": "MNT",
-  "vat_amount": 500000,
-  "notes": "Вэб хөгжүүлэлтийн нэхэмжлэх",
+  "vat_amount": 0,
   "items": [
-    {"description": "Back-end хөгжүүлэлт", "quantity": 1, "unit_price": 3000000, "tax_amount": 300000},
-    {"description": "Front-end хөгжүүлэлт", "quantity": 1, "unit_price": 2000000, "tax_amount": 200000}
+    {"description": "Backend development", "quantity": 1, "unit_price": 3000000, "tax_amount": 0},
+    {"description": "Frontend development", "quantity": 1, "unit_price": 2000000, "tax_amount": 0}
   ]
 }
 ```
 
 ### Payment Service (`/api/payments/*`)
 
-| Method | Endpoint | Auth | Permission | Тайлбар |
-|--------|----------|------|------------|---------|
-| GET | `/api/payments` | Yes | — | Төлбөрийн жагсаалт |
-| POST | `/api/payments` | Yes | invoice:pay | Төлбөр хийх (Idempotency-Key header шаардлагатай) |
-| GET | `/api/payments/:id` | Yes | — | Дэлгэрэнгүй |
-| GET | `/api/payments/by-invoice/:invoiceId` | Yes | — | Нэхэмжлэхийн төлбөрүүд |
-| POST | `/api/payments/:id/approve` | Yes | payment:approve | Батлах |
-| POST | `/api/payments/:id/reject` | Yes | payment:approve | Татгалзах |
+| Method | Endpoint | Auth | Permission | Description |
+|--------|----------|------|------------|-------------|
+| GET | `/api/payments` | Yes | — | List payments |
+| POST | `/api/payments` | Yes | invoice:pay | Initiate payment (Idempotency-Key header required) |
+| GET | `/api/payments/:id` | Yes | — | Get detail |
+| GET | `/api/payments/by-invoice/:invoiceId` | Yes | — | Payments for an invoice |
+| POST | `/api/payments/:id/approve` | Yes | payment:approve | Approve payment |
+| POST | `/api/payments/:id/reject` | Yes | payment:approve | Reject payment |
 
-**Төлбөр хийх жишээ:**
+**Initiate Payment Example:**
 ```json
 POST /api/payments
 Headers: { "Idempotency-Key": "unique-key-123" }
@@ -298,97 +297,98 @@ Headers: { "Idempotency-Key": "unique-key-123" }
 
 ### Notification Service (`/api/notifications/*`)
 
-| Method | Endpoint | Auth | Тайлбар |
-|--------|----------|------|---------|
-| GET | `/api/notifications` | Yes | Мэдэгдлийн жагсаалт |
-| GET | `/api/notifications/unread-count` | Yes | Уншаагүй тоо |
-| PATCH | `/api/notifications/:id/read` | Yes | Уншсан тэмдэглэх |
-| POST | `/api/notifications/mark-all-read` | Yes | Бүгдийг уншсан |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/notifications` | Yes | List notifications |
+| GET | `/api/notifications/unread-count` | Yes | Unread count |
+| PATCH | `/api/notifications/:id/read` | Yes | Mark as read |
+| POST | `/api/notifications/mark-all-read` | Yes | Mark all as read |
 
 ### Audit Service (`/api/audit/*`)
 
-| Method | Endpoint | Auth | Permission | Тайлбар |
-|--------|----------|------|------------|---------|
-| GET | `/api/audit/logs` | Yes | report:view | Аудит лог |
-| GET | `/api/audit/integration-logs` | Yes | report:view | Интеграцийн лог |
+| Method | Endpoint | Auth | Permission | Description |
+|--------|----------|------|------------|-------------|
+| GET | `/api/audit/logs` | Yes | report:view | Audit logs |
+| GET | `/api/audit/integration-logs` | Yes | report:view | Integration logs |
 
 ### Mock Finacle (`:4010`)
 
-| Method | Endpoint | Тайлбар |
-|--------|----------|---------|
-| POST | `/finacle/accounts/validate` | Данс шалгах `{account_no}` |
-| POST | `/finacle/accounts/balance` | Үлдэгдэл `{account_no}` |
-| POST | `/finacle/transfer` | Шилжүүлэг `{debit_account, credit_account, amount, currency, reference}` |
-| GET | `/finacle/transactions/:ref` | Гүйлгээ лавлах |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/finacle/accounts/validate` | Validate account `{account_no}` |
+| POST | `/finacle/accounts/balance` | Check balance `{account_no}` |
+| POST | `/finacle/transfer` | Fund transfer `{debit_account, credit_account, amount, currency, reference}` |
+| GET | `/finacle/transactions/:ref` | Get transaction status |
 
 ### Mock e-Invoice (`:4011`)
 
-| Method | Endpoint | Тайлбар |
-|--------|----------|---------|
-| POST | `/einvoice/invoices` | Нэхэмжлэх бүртгэх |
-| GET | `/einvoice/invoices/:ref/status` | Статус |
-| PUT | `/einvoice/invoices/:ref/cancel` | Цуцлах |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/einvoice/invoices` | Register invoice |
+| GET | `/einvoice/invoices/:ref/status` | Get status |
+| PUT | `/einvoice/invoices/:ref/cancel` | Cancel invoice |
 
 ---
 
-## Frontend хуудаснууд
+## Frontend Pages
 
-| Хуудас | URL | Эрх | Тайлбар |
-|--------|-----|------|---------|
-| Нэвтрэх | `/login` | Бүгд | Login form |
-| Dashboard | `/` | Нэвтэрсэн | Статистик, сүүлийн нэхэмжлэхүүд |
-| Нэхэмжлэх | `/invoices` | Нэвтэрсэн | Илгээсэн/Ирсэн tab, filter, pagination |
-| Нэхэмжлэх үүсгэх | `/invoices/create` | MAKER, ADMIN | Form + dynamic items |
-| Нэхэмжлэх дэлгэрэнгүй | `/invoices/:id` | Нэвтэрсэн | Мэдээлэл, items, статус түүх, үйлдлүүд |
-| Төлбөр | `/payments` | Нэвтэрсэн | Жагсаалт, filter |
-| Төлбөр хийх | `/payments/new` | USER, ADMIN | Данс сонгох, дүн оруулах |
-| Төлбөр дэлгэрэнгүй | `/payments/:id` | Нэвтэрсэн | Дэлгэрэнгүй, Finacle ref |
-| Мэдэгдэл | `/notifications` | Нэвтэрсэн | Жагсаалт, уншсан/уншаагүй |
-| Аудит лог | `/audit` | ADMIN, OPERATOR | Аудит + интеграцийн лог |
-| Админ | `/admin` | ADMIN | Хэрэглэгч, байгууллага удирдлага |
-
----
-
-## Demo сценари
-
-### Сценари 1: Нэхэмжлэх илгээж төлөх
-
-1. `maker_a`-аар нэвтрэх → Нэхэмжлэх → Нэхэмжлэх үүсгэх
-2. Хүлээн авагч: "Улаанбаатар Худалдаа ХХК", items нэмэх → Үүсгэж илгээх
-3. `user_b`-аар нэвтрэх → Нэхэмжлэх → Ирсэн tab → "Төлөх" товч
-4. Данс сонгох (2001000001 MNT) → Төлбөр хийх
-5. Төлбөр → Жагсаалтад PAID, Finacle txn ref харагдана
-
-### Сценари 2: Хоёр чиглэлд нэхэмжлэх
-
-1. `maker_a` → Org B руу нэхэмжлэх илгээх
-2. `maker_b` → Org A руу нэхэмжлэх илгээх
-3. Тус тус хүлээн авч, төлбөр хийх
-
-### Сценари 3: Нэхэмжлэх цуцлах
-
-1. `maker_a` → Нэхэмжлэх үүсгэх → Илгээх
-2. Нэхэмжлэхийн дэлгэрэнгүй → "Цуцлах" → Шалтгаан бичих
-3. Статус: CANCEL_REQUESTED
-
-### Сценари 4: Админ хяналт
-
-1. `admin`-аар нэвтрэх
-2. Админ → Хэрэглэгчид (8 user бүгд), Байгууллагууд (данс харах)
-3. Аудит лог → Бүх үйлдлийн түүх
+| Page | URL | Access | Description |
+|------|-----|--------|-------------|
+| Login | `/login` | Public | Login form |
+| Dashboard | `/` | Authenticated | Statistics, recent invoices |
+| Invoices | `/invoices` | Authenticated | Sent/Received tabs, filter, pagination |
+| Create Invoice | `/invoices/create` | MAKER, ADMIN | Form with dynamic line items |
+| Invoice Detail | `/invoices/:id` | Authenticated | Info, items, status history, actions |
+| Payments | `/payments` | Authenticated | Payment list, filter |
+| Make Payment | `/payments/new` | USER, ADMIN | Select account, enter amount |
+| Payment Detail | `/payments/:id` | Authenticated | Detail with Finacle ref |
+| Notifications | `/notifications` | Authenticated | Read/unread notifications |
+| Audit Log | `/audit` | ADMIN, OPERATOR | Audit + integration logs |
+| Admin | `/admin` | ADMIN | User and organization management |
+| Documentation | `/docs` | Authenticated | System guide and diagrams |
 
 ---
 
-## Тест ажиллуулах
+## Demo Scenarios
+
+### Scenario 1: Send and Pay Invoice
+
+1. Login as `maker_a` → Invoices → Create Invoice
+2. Select receiver: "Ulaanbaatar Trade LLC", add items → Create and Send
+3. Login as `user_b` → Invoices → Received tab → Click "Pay"
+4. Select account (2001000001 MNT) → Make Payment
+5. Payments → List shows PAID with Finacle txn ref
+
+### Scenario 2: Bidirectional Invoicing
+
+1. `maker_a` → Send invoice to Org B
+2. `maker_b` → Send invoice to Org A
+3. Each org receives and pays
+
+### Scenario 3: Cancel Invoice
+
+1. `maker_a` → Create invoice → Send
+2. Open invoice detail → Click "Cancel" → Enter reason
+3. Status: CANCEL_REQUESTED
+
+### Scenario 4: Admin Panel
+
+1. Login as `admin`
+2. Admin → Users (all 8), Organizations (with account details)
+3. Audit Log → Full action history
+
+---
+
+## Running Tests
 
 ```bash
-# Бүх API endpoint тест (55 тест)
+# Full API endpoint tests (55 tests)
 bash scripts/test-all-endpoints.sh
 ```
 
 ---
 
-## Файлын бүтэц
+## Project Structure
 
 ```
 m-bank/
@@ -405,15 +405,18 @@ m-bank/
 │   ├── audit-service/           # Audit logging
 │   ├── integration-service/     # External system adapters
 │   ├── mock-finacle/            # Core Banking simulator
-│   └── mock-einvoice/           # e-Invoice simulator
+│   ├── mock-einvoice/           # e-Invoice simulator
+│   └── unified-server/          # Single-process server for deployment
 ├── frontend/                    # React SPA
 ├── scripts/
-│   ├── run-all.sh               # Бүх service эхлүүлэх
-│   ├── seed-db.ts               # Test data оруулах
-│   └── test-all-endpoints.sh    # API тест (55 тест)
+│   ├── run-all.sh               # Start all services
+│   ├── seed-db.ts               # Insert test data
+│   └── test-all-endpoints.sh    # API tests (55 tests)
 ├── docs/
-│   ├── README.md                # Энэ файл
-│   └── diagrams.md              # Системийн диаграмууд
-├── docker-compose.yml           # Docker Compose тохиргоо
+│   ├── README.md                # This file
+│   ├── diagrams.md              # System diagrams
+│   └── DEPLOY.md                # Deployment guide
+├── docker-compose.yml
+├── render.yaml                  # Render deploy config
 └── package.json                 # npm workspaces root
 ```
