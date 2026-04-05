@@ -509,8 +509,19 @@ app.post('/api/payments', async (req, res) => {
 
         await query("UPDATE payments SET payment_status = 'PAID', finacle_txn_ref = $1, updated_at = NOW() WHERE payment_id = $2", [txnRef, payment.payment_id]);
 
-        // Update invoice paid amount
-        await query('UPDATE invoices SET paid_amount = paid_amount + $1, outstanding_amount = outstanding_amount - $1, updated_at = NOW() WHERE invoice_id = $2', [amount, invoice_id]);
+        // Update invoice paid amount + status
+        const invRes = await query('SELECT total_amount, paid_amount, status FROM invoices WHERE invoice_id = $1', [invoice_id]);
+        if (invRes.rows.length > 0) {
+          const inv = invRes.rows[0];
+          const newPaid = Number(inv.paid_amount) + amount;
+          const total = Number(inv.total_amount);
+          const newOutstanding = Math.max(0, total - newPaid);
+          const newStatus = newPaid >= total ? 'PAID' : newPaid > 0 ? 'PARTIALLY_PAID' : inv.status;
+          await query('UPDATE invoices SET paid_amount = $1, outstanding_amount = $2, status = $3, updated_at = NOW() WHERE invoice_id = $4', [newPaid, newOutstanding, newStatus, invoice_id]);
+          if (newStatus !== inv.status) {
+            await query("INSERT INTO invoice_status_history (invoice_id, from_status, to_status, changed_by, reason) VALUES ($1,$2,$3,'00000000-0000-0000-0000-000000000000','Payment received')", [invoice_id, inv.status, newStatus]);
+          }
+        }
 
         // Notification
         await query('INSERT INTO notifications (org_id, type, title, message, entity_type, entity_id) VALUES ($1,$2,$3,$4,$5,$6)',
