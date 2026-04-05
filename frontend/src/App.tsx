@@ -18,6 +18,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/docs" element={<DocsPage />} />
 
       <Route
         element={
@@ -41,7 +42,6 @@ function App() {
         <Route path="/payments/new" element={<CreatePaymentPage />} />
         <Route path="/payments/:id" element={<PaymentDetailPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/docs" element={<DocsPage />} />
         <Route
           path="/audit"
           element={
