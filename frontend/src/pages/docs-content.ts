@@ -1,131 +1,131 @@
 export const README_CONTENT = `
-# M-Bank: Нэхэмжлэх солилцох систем
+# M-Bank: Inter-Bank Invoice Exchange System
 
-## Системийн тойм
+## Overview
 
-Интернэт банк ашиглаж буй байгууллагууд хоорондоо нэхэмжлэх үүсгэх, илгээх, хүлээн авах, төлөх, цуцлах үйлдлүүдийг аюулгүй, найдвартай хэрэгжүүлэх систем.
+A secure and reliable system for organizations using internet banking to create, send, receive, pay, and cancel invoices between each other.
 
-## Технологийн стек
+## Tech Stack
 
-| Бүрэлдэхүүн | Технологи |
+| Component | Technology |
 |---|---|
-| Backend | Express + TypeScript (9 microservice) |
+| Backend | Express + TypeScript (9 microservices) |
 | Frontend | React + TypeScript + Vite + Tailwind CSS |
-| Database | PostgreSQL 16 (service бүрт тусдаа DB) |
+| Database | PostgreSQL 16 (database-per-service) |
 | Queue | Redis 7 + BullMQ (async messaging) |
 | External | Mock Finacle (Core Banking) + Mock e-Invoice |
 
-## Тест хэрэглэгчид
+## Test Users
 
-| Username | Нууц үг | Эрх | Байгууллага |
+| Username | Password | Role | Organization |
 |---|---|---|---|
-| maker_a | password123 | Мэйкер | Монгол Технологи ХХК |
-| user_a | password123 | Хэрэглэгч | Монгол Технологи ХХК |
-| approver_a | password123 | Батлагч | Монгол Технологи ХХК |
-| maker_b | password123 | Мэйкер | Улаанбаатар Худалдаа ХХК |
-| user_b | password123 | Хэрэглэгч | Улаанбаатар Худалдаа ХХК |
-| approver_b | password123 | Батлагч | Улаанбаатар Худалдаа ХХК |
-| admin | password123 | Систем Админ | — |
-| operator | password123 | Банк Оператор | — |
+| maker_a | password123 | Corporate Maker | Mongol Technology LLC |
+| user_a | password123 | Corporate User | Mongol Technology LLC |
+| approver_a | password123 | Corporate Approver | Mongol Technology LLC |
+| maker_b | password123 | Corporate Maker | Ulaanbaatar Trade LLC |
+| user_b | password123 | Corporate User | Ulaanbaatar Trade LLC |
+| approver_b | password123 | Corporate Approver | Ulaanbaatar Trade LLC |
+| admin | password123 | System Admin | — |
+| operator | password123 | Bank Operator | — |
 
-## Тест дансууд (Mock Finacle)
+## Test Accounts (Mock Finacle)
 
-| Данс | Байгууллага | Валют | Үлдэгдэл |
+| Account No | Organization | Currency | Balance |
 |---|---|---|---|
-| 1001000001 | Монгол Технологи ХХК | MNT | 50,000,000 |
-| 1001000002 | Монгол Технологи ХХК | USD | 100,000 |
-| 2001000001 | Улаанбаатар Худалдаа ХХК | MNT | 30,000,000 |
-| 2001000002 | Улаанбаатар Худалдаа ХХК | USD | 50,000 |
+| 1001000001 | Mongol Technology LLC | MNT | 50,000,000 |
+| 1001000002 | Mongol Technology LLC | USD | 100,000 |
+| 2001000001 | Ulaanbaatar Trade LLC | MNT | 30,000,000 |
+| 2001000002 | Ulaanbaatar Trade LLC | USD | 50,000 |
 
-## Хэрэглэгчийн эрх (RBAC)
+## Role-Based Access Control (RBAC)
 
-| Эрх | Чадах зүйл |
+| Role | Permissions |
 |---|---|
-| **CORPORATE_MAKER** | Нэхэмжлэх үүсгэх, илгээх, харах |
-| **CORPORATE_USER** | Нэхэмжлэх харах, төлбөр хийх |
-| **CORPORATE_APPROVER** | Төлбөр батлах, нэхэмжлэх цуцлах |
-| **BANK_OPERATOR** | Аудит лог, тайлан харах |
-| **SYSTEM_ADMIN** | Бүх эрх + Админ хяналт |
+| **CORPORATE_MAKER** | Create, send, view invoices |
+| **CORPORATE_USER** | View invoices, make payments |
+| **CORPORATE_APPROVER** | Approve payments, cancel invoices |
+| **BANK_OPERATOR** | View audit logs, reports |
+| **SYSTEM_ADMIN** | Full access + admin panel |
 
 ## API Endpoints
 
-### Auth
-| Method | Endpoint | Тайлбар |
+### Authentication
+| Method | Endpoint | Description |
 |---|---|---|
-| POST | /api/auth/login | Нэвтрэх |
-| POST | /api/auth/refresh | Token шинэчлэх |
-| POST | /api/auth/logout | Гарах |
+| POST | /api/auth/login | Login with credentials |
+| POST | /api/auth/refresh | Refresh access token |
+| POST | /api/auth/logout | Logout and revoke token |
 
-### Нэхэмжлэх
-| Method | Endpoint | Тайлбар |
+### Invoices
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | /api/invoices?direction=sent | Илгээсэн жагсаалт |
-| GET | /api/invoices?direction=received | Ирсэн жагсаалт |
-| POST | /api/invoices | Үүсгэх |
-| GET | /api/invoices/:id | Дэлгэрэнгүй |
-| POST | /api/invoices/:id/send | Илгээх |
-| POST | /api/invoices/:id/view | Үзсэн тэмдэглэх |
-| POST | /api/invoices/:id/cancel | Цуцлах |
-| GET | /api/invoices/:id/history | Статус түүх |
-| GET | /api/invoices/stats | Dashboard статистик |
+| GET | /api/invoices?direction=sent | List sent invoices |
+| GET | /api/invoices?direction=received | List received invoices |
+| POST | /api/invoices | Create new invoice |
+| GET | /api/invoices/:id | Get invoice detail with items |
+| POST | /api/invoices/:id/send | Send invoice to receiver |
+| POST | /api/invoices/:id/view | Mark as viewed by receiver |
+| POST | /api/invoices/:id/cancel | Request cancellation |
+| GET | /api/invoices/:id/history | Get status change history |
+| GET | /api/invoices/stats | Dashboard statistics |
 
-### Төлбөр
-| Method | Endpoint | Тайлбар |
+### Payments
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | /api/payments | Жагсаалт |
-| POST | /api/payments | Төлбөр хийх (Idempotency-Key header) |
-| GET | /api/payments/:id | Дэлгэрэнгүй |
-| GET | /api/payments/by-invoice/:id | Нэхэмжлэхийн төлбөрүүд |
-| POST | /api/payments/:id/approve | Батлах |
-| POST | /api/payments/:id/reject | Татгалзах |
+| GET | /api/payments | List payments |
+| POST | /api/payments | Initiate payment (Idempotency-Key header required) |
+| GET | /api/payments/:id | Get payment detail |
+| GET | /api/payments/by-invoice/:id | Get payments for an invoice |
+| POST | /api/payments/:id/approve | Approve payment |
+| POST | /api/payments/:id/reject | Reject payment |
 
-### Бусад
-| Method | Endpoint | Тайлбар |
+### Other
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | /api/organizations | Байгууллагууд |
-| GET | /api/notifications | Мэдэгдлүүд |
-| GET | /api/audit/logs | Аудит лог |
-| GET | /api/users | Хэрэглэгчид |
+| GET | /api/organizations | List organizations |
+| GET | /api/organizations/:id/accounts | List accounts |
+| GET | /api/notifications | List notifications |
+| GET | /api/audit/logs | Audit logs (admin only) |
+| GET | /api/users | List users |
 
-## Нэхэмжлэхийн статус
+## Invoice Status Lifecycle
 
-| Статус | Тайлбар |
+| Status | Description |
 |---|---|
-| DRAFT | Ноорог — засах, устгах боломжтой |
-| VERIFIED | Баталгаажсан (автомат) |
-| SENT | Илгээгдсэн |
-| RECEIVED | Хүлээн авагчид хүрсэн (автомат) |
-| VIEWED | Хүлээн авагч үзсэн |
-| PAYMENT_PENDING | Төлбөр хүлээгдэж буй |
-| PAID | Бүрэн төлөгдсөн |
-| CANCEL_REQUESTED | Цуцлалт хүсэлт |
-| CANCELLED | Цуцлагдсан |
-| FAILED | Амжилтгүй |
+| DRAFT | Draft — can be edited or deleted |
+| VERIFIED | Verified automatically before sending |
+| SENT | Sent to receiver organization |
+| RECEIVED | Delivered to receiver (auto-transition) |
+| VIEWED | Viewed by receiver |
+| PAYMENT_PENDING | Payment initiated, awaiting processing |
+| PAID | Fully paid via Finacle transfer |
+| CANCEL_REQUESTED | Cancellation requested by sender |
+| CANCELLED | Cancelled |
+| FAILED | Payment failed |
 
-## Demo сценари
+## Demo Scenarios
 
-### 1. Нэхэмжлэх илгээж төлөх
-1. **maker_a**-аар нэвтрэх → Нэхэмжлэх → Нэхэмжлэх үүсгэх
-2. Хүлээн авагч: "Улаанбаатар Худалдаа ХХК" сонгох
-3. Items нэмэх → Үүсгэж илгээх
-4. **user_b**-аар нэвтрэх → Ирсэн нэхэмжлэх → "Төлөх"
-5. Данс сонгох → Төлбөр хийх → PAID болно
+### 1. Send and Pay Invoice
+1. Login as **maker_a** — Create invoice — Select receiver org
+2. Add line items — Click "Send"
+3. Login as **user_b** — View received invoices — Click "Pay"
+4. Select payer account — Confirm payment — Status becomes PAID
 
-### 2. Нэхэмжлэх цуцлах
-1. **maker_a** → Нэхэмжлэх үүсгэх → Илгээх
-2. Дэлгэрэнгүй → "Цуцлах" → Шалтгаан бичих
+### 2. Cancel Invoice
+1. **maker_a** — Create and send invoice
+2. Open invoice detail — Click "Cancel" — Enter reason
 
-### 3. Админ хяналт
-1. **admin**-аар нэвтрэх
-2. Админ → 8 хэрэглэгч, 2 байгууллага, дансны мэдээлэл
+### 3. Admin Panel
+1. Login as **admin**
+2. Admin page — View all 8 users, 2 organizations, account details
 `;
 
 export const DIAGRAMS_CONTENT = `
-# Системийн диаграмууд
+# System Diagrams
 
-## 1. Ерөнхий архитектур
+## 1. Architecture Overview
 
-\`\`\`
+${"`"+"``"}
 ┌──────────┐     ┌─────────────┐     ┌──────────────────────────────┐
 │ Frontend │────>│ API Gateway │────>│  Auth Service      :4001    │
 │ :5173    │     │ :4000       │     │  Invoice Service   :4002    │
@@ -139,11 +139,11 @@ export const DIAGRAMS_CONTENT = `
                                      │  Mock Finacle    :4010     │
                                      │  Mock e-Invoice  :4011     │
                                      └────────────────────────────┘
-\`\`\`
+${"`"+"``"}
 
-## 2. Нэхэмжлэх илгээх урсгал
+## 2. Invoice Send Flow
 
-\`\`\`
+${"`"+"``"}
 Org A (Maker)              System                    Org B (User)
     │                         │                          │
     │ POST /invoices          │                          │
@@ -162,11 +162,11 @@ Org A (Maker)              System                    Org B (User)
     │                         │ POST /invoices/:id/view  │
     │                         │<─────────────────────────┤
     │                         │ RECEIVED->VIEWED         │
-\`\`\`
+${"`"+"``"}
 
-## 3. Төлбөр хийх урсгал
+## 3. Payment Flow
 
-\`\`\`
+${"`"+"``"}
 User (Org B)      Payment Svc    Integration    Mock Finacle
     │                 │               │               │
     │ POST /payments  │               │               │
@@ -192,11 +192,11 @@ User (Org B)      Payment Svc    Integration    Mock Finacle
     │ GET /payments/:id               │               │
     ├────────────────>│               │               │
     │<─ PAID+txn_ref ─┤               │               │
-\`\`\`
+${"`"+"``"}
 
-## 4. Статус шилжилт (State Machine)
+## 4. Invoice State Machine
 
-\`\`\`
+${"`"+"``"}
 DRAFT -> VERIFIED -> SENT -> RECEIVED -> VIEWED
                                           │
                                 PAYMENT_PENDING
@@ -207,30 +207,30 @@ DRAFT -> VERIFIED -> SENT -> RECEIVED -> VIEWED
                                       _PAID
 
   SENT/RECEIVED/VIEWED -> CANCEL_REQUESTED -> CANCELLED
-\`\`\`
+${"`"+"``"}
 
-## 5. Микросервис харилцаа
+## 5. Inter-Service Communication
 
-### Synchronous (HTTP)
-| Дуудагч | Хүлээн авагч | Зорилго |
+### Synchronous (HTTP REST)
+| Caller | Target | Purpose |
 |---|---|---|
-| API Gateway | Auth Service | JWT баталгаажуулалт |
-| Invoice Service | Auth Service | Байгууллагын нэр авах |
-| Payment Service | Integration Service | Данс шалгах |
-| Integration | Mock Finacle | Гүйлгээ хийх |
-| Integration | Mock e-Invoice | Нэхэмжлэх бүртгэх |
+| API Gateway | Auth Service | JWT token verification |
+| Invoice Service | Auth Service | Resolve organization name |
+| Payment Service | Integration Service | Validate bank account |
+| Integration | Mock Finacle | Execute fund transfer |
+| Integration | Mock e-Invoice | Register invoice |
 
-### Asynchronous (BullMQ)
-| Queue | Producer | Consumer | Зорилго |
+### Asynchronous (BullMQ Queues)
+| Queue | Producer | Consumer | Purpose |
 |---|---|---|---|
-| invoice.status-changed | Invoice | Notification, Audit, Integration | Статус өөрчлөгдөхөд |
-| payment.initiated | Payment | Integration | Finacle руу гүйлгээ |
-| payment.status-changed | Payment | Invoice, Notification, Audit | Төлбөр хийгдэхэд |
-| integration.finacle-result | Integration | Payment | Finacle хариу |
+| invoice.status-changed | Invoice Svc | Notification, Audit, Integration | On status change |
+| payment.initiated | Payment Svc | Integration Svc | Trigger Finacle transfer |
+| payment.status-changed | Payment Svc | Invoice, Notification, Audit | On payment result |
+| integration.finacle-result | Integration | Payment Svc | Finacle callback |
 
-## 6. Database бүтэц
+## 6. Database Schema
 
-| Database | Хүснэгтүүд |
+| Database | Tables |
 |---|---|
 | auth_db | organizations, accounts, users, refresh_tokens |
 | invoice_db | invoices, invoice_items, invoice_status_history |

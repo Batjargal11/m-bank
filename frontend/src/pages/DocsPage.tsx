@@ -7,8 +7,8 @@ import { README_CONTENT, DIAGRAMS_CONTENT } from './docs-content';
 type Tab = 'readme' | 'diagrams';
 
 const TABS = [
-  { id: 'readme' as Tab, label: 'Гарын авлага', icon: Book },
-  { id: 'diagrams' as Tab, label: 'Диаграм', icon: GitBranch },
+  { id: 'readme' as Tab, label: 'Guide', icon: Book },
+  { id: 'diagrams' as Tab, label: 'Diagrams', icon: GitBranch },
 ];
 
 export default function DocsPage() {
@@ -20,7 +20,7 @@ export default function DocsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Documentation</h1>
-          <p className="mt-1 text-sm text-gray-500">Системийн гарын авлага болон техникийн баримт бичиг</p>
+          <p className="mt-1 text-sm text-gray-500">System guide and technical documentation</p>
         </div>
         <a
           href="https://github.com/Batjargal11/m-bank"
